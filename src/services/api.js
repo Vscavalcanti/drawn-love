@@ -10,7 +10,7 @@
 import { auth, data } from './store.js';
 import { birthInfo } from '../utils/birth.js';
 
-export { auth, usingFirebase } from './store.js';
+export { auth, usingFirebase, preload } from './store.js';
 
 /* ------------------------------- Perfil ------------------------------- */
 
@@ -42,10 +42,13 @@ export function publicProfile(ans) {
 // done = true quando a pessoa termina as 5 etapas do cadastro
 export async function saveProfile(uid, ans, head, done = false) {
   const { email, ...rest } = ans; // e-mail fica só no login, não no perfil
-  await data.set('private/' + uid, { ans: rest });
-  await data.set('users/' + uid, {
-    profile: publicProfile(ans), head, seek: ans.seek || [], updatedAt: Date.now(), ...(done ? { profileDone: true } : {}),
-  });
+  // as duas gravações ao mesmo tempo
+  await Promise.all([
+    data.set('private/' + uid, { ans: rest }),
+    data.set('users/' + uid, {
+      profile: publicProfile(ans), head, seek: ans.seek || [], updatedAt: Date.now(), ...(done ? { profileDone: true } : {}),
+    }),
+  ]);
 }
 
 export const saveAvatar = (uid, me) => data.set('users/' + uid, { me, ready: true, updatedAt: Date.now() });

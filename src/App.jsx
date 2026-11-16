@@ -16,7 +16,7 @@ import NavBar from './components/NavBar.jsx';
 import useIsDesktop from './components/useIsDesktop.js';
 import { BASES } from './data/avatarOptions.js';
 import {
-  auth, usingFirebase, publicProfile, saveProfile, saveAvatar, loadMe, loadDiscover, markSeen,
+  auth, usingFirebase, preload, publicProfile, saveProfile, saveAvatar, loadMe, loadDiscover, markSeen,
   sendLike, watchIncoming, answerLike, watchMatches,
 } from './services/api.js';
 
@@ -60,6 +60,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    preload();
     auth.restore().then((s) => (s ? enter(s) : setScreen('welcome'))).catch((e) => { fail(e); setScreen('welcome'); });
   }, [enter]);
 

@@ -41,11 +41,27 @@ const FB_ERRORS = {
   'auth/user-not-found': 'E-mail ou senha incorretos.',
   'auth/too-many-requests': 'Muitas tentativas. Espere um pouco e tente de novo.',
   'auth/network-request-failed': 'Sem conexão com a internet.',
+  'auth/configuration-not-found': 'O login por e-mail ainda não foi ativado no Firebase (Authentication > Método de login > E-mail/senha).',
+  'auth/operation-not-allowed': 'O login por e-mail/senha está desativado no Firebase (Authentication > Método de login).',
+  'auth/invalid-api-key': 'A chave do Firebase está errada. Confira a variável VITE_FIREBASE_API_KEY.',
+  'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'A chave do Firebase está errada. Confira a variável VITE_FIREBASE_API_KEY.',
   'auth/unauthorized-domain': 'Este site ainda não foi autorizado no Firebase (veja o README).',
   'permission-denied': 'Sem permissão no banco de dados. Confira as regras do Firestore (veja o README).',
 };
 const friendly = (e) => new Error(FB_ERRORS[e.code] || e.message || 'Algo deu errado. Tente de novo.');
 const guard = async (fn) => { try { return await fn(); } catch (e) { throw friendly(e); } };
+
+// Se o banco não responder (ex.: Firestore ainda não criado), avisa em vez de ficar carregando para sempre.
+const SLOW = 15000;
+const withTimeout = (promise) => Promise.race([
+  promise,
+  new Promise((_, reject) => setTimeout(() => reject(new Error(
+    'O banco de dados não respondeu. Confira se o Firestore Database foi criado no Firebase e se a internet está funcionando.',
+  )), SLOW)),
+]);
+
+// Começa a baixar o Firebase antes da hora, para o "Criar conta" e o "Entrar" ficarem mais rápidos.
+export const preload = () => { if (usingFirebase) firebase().catch(() => {}); };
 
 const fbRef = (fb, path) => fb.S.doc(fb.db, ...path.split('/'));
 const fbColl = (fb, path) => fb.S.collection(fb.db, ...path.split('/'));
@@ -97,10 +113,10 @@ const firebaseBackend = {
     signOut: async () => { const fb = await firebase(); await fb.A.signOut(fb.auth); },
   },
   data: {
-    get: (path) => guard(async () => { const fb = await firebase(); const s = await fb.S.getDoc(fbRef(fb, path)); return s.exists() ? { id: s.id, ...s.data() } : null; }),
-    set: (path, value, merge = true) => guard(async () => { const fb = await firebase(); await fb.S.setDoc(fbRef(fb, path), value, { merge }); }),
-    add: (path, value) => guard(async () => { const fb = await firebase(); return (await fb.S.addDoc(fbColl(fb, path), value)).id; }),
-    query: (path, where) => guard(async () => { const fb = await firebase(); return fbList(await fb.S.getDocs(fbQuery(fb, path, where))); }),
+    get: (path) => guard(async () => { const fb = await firebase(); const s = await withTimeout(fb.S.getDoc(fbRef(fb, path))); return s.exists() ? { id: s.id, ...s.data() } : null; }),
+    set: (path, value, merge = true) => guard(async () => { const fb = await firebase(); await withTimeout(fb.S.setDoc(fbRef(fb, path), value, { merge })); }),
+    add: (path, value) => guard(async () => { const fb = await firebase(); return (await withTimeout(fb.S.addDoc(fbColl(fb, path), value))).id; }),
+    query: (path, where) => guard(async () => { const fb = await firebase(); return fbList(await withTimeout(fb.S.getDocs(fbQuery(fb, path, where)))); }),
     // Escuta mudanças em tempo real. Devolve uma função para parar de escutar.
     watch(path, where, cb, onError) {
       let off = () => {}, stopped = false;
