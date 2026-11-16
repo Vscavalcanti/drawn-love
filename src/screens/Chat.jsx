@@ -88,7 +88,7 @@ export default function Chat({ match, uid, myName, back }) {
           {error && <div role="alert" className="error" style={{ margin: '0 16px 8px' }}>{error}</div>}
           <div className="row gap-8" style={{ padding: '0 16px 12px' }}>
             <label htmlFor="msg" className="sr-only">Mensagem</label>
-            <input id="msg" className="input grow" style={{ borderRadius: 999, height: 48, minWidth: 0 }} value={draft}
+            <input id="msg" className="input grow" style={{ borderRadius: 999, height: 48, minWidth: 0 }} maxLength={1000} value={draft}
               onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder="Escreva algo de verdade..." />
             <button aria-label="Enviar" onClick={send} style={{ width: 48, height: 48, flex: 'none', borderRadius: 999, border: 'none', background: 'var(--magenta)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Send /></button>
           </div>

@@ -2,41 +2,91 @@ rules_version = '2';
 
 // Regras de segurança do Firestore para o Drawn Love.
 // Cole este conteúdo em: Firebase Console > Firestore Database > Regras > Publicar.
+//
+// Resumo:
+// - Só quem confirmou o e-mail enxerga outras pessoas, manda redesenhos e conversa.
+// - Cada pessoa só altera os próprios dados.
+// - Match só existe se a outra pessoa aprovou o redesenho.
+// - Tamanhos limitados (mensagens, textos e desenhos) para ninguém lotar o banco.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
     function me() { return request.auth.uid; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function data() { return request.resource.data; }
+    function str(v, max) { return v is string && v.size() <= max; }
 
-    // Perfil público: quem está logado pode ver; só a própria pessoa edita.
+    // ---------- Perfil público ----------
+    // Ler outras pessoas: só com e-mail confirmado.
+    // Escrever o próprio perfil: liberado logo após criar a conta (o cadastro salva antes da confirmação).
     match /users/{uid} {
-      allow read: if signedIn();
-      allow write: if signedIn() && me() == uid;
+      allow read: if verified() || (signedIn() && me() == uid);
+      allow create, update: if signedIn() && me() == uid
+        && data().keys().hasOnly(['profile', 'head', 'seek', 'me', 'ready', 'profileDone', 'updatedAt'])
+        && (!('profile' in data()) || (data().profile is map
+            && str(data().profile.get('name', ''), 40)
+            && str(data().profile.get('bio', ''), 2000)))
+        && (!('ready' in data()) || data().ready == false || verified());
+      allow delete: if false;
     }
 
-    // Respostas do cadastro e lista de quem já passou: só a própria pessoa.
+    // ---------- Dados privados (respostas do cadastro, quem já passou) ----------
     match /private/{uid} {
       allow read, write: if signedIn() && me() == uid;
     }
 
-    // Redesenhos: quem enviou e quem recebeu podem ver.
-    // Só quem envia cria; só quem recebe aprova ou recusa.
+    // ---------- Redesenhos enviados ----------
+    // O id é sempre "de_para"; só quem envia cria; só quem recebe responde (e só o campo status).
     match /likes/{id} {
-      allow read: if signedIn() && (resource.data.from == me() || resource.data.to == me());
-      allow create: if signedIn() && request.resource.data.from == me() && id == me() + '_' + request.resource.data.to;
-      allow update: if signedIn() && resource.data.to == me()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow read: if verified() && (resource.data.from == me() || resource.data.to == me());
+      allow create: if verified()
+        && data().from == me()
+        && data().to != me()
+        && id == me() + '_' + data().to
+        && data().status == 'pending'
+        && str(data().fromName, 40)
+        && data().sent is map
+        && (!('image' in data().sent) || str(data().sent.image, 300000));   // desenho de até ~300 KB
+      allow update: if verified()
+        && resource.data.to == me()
+        && resource.data.status == 'pending'
+        && data().diff(resource.data).affectedKeys().hasOnly(['status'])
+        && data().status in ['accepted', 'declined'];
+      allow delete: if false;
     }
 
-    // Conversas: só as duas pessoas do match.
+    // ---------- Conversas ----------
     match /matches/{id} {
-      allow read, update: if signedIn() && me() in resource.data.users;
-      allow create: if signedIn() && me() in request.resource.data.users;
+      function members() { return resource.data.users; }
+      function other(users) { return users[0] == me() ? users[1] : users[0]; }
+
+      allow read: if verified() && me() in members();
+
+      // Só cria o match quem APROVOU o redesenho da outra pessoa.
+      allow create: if verified()
+        && data().users is list && data().users.size() == 2
+        && me() in data().users
+        && id == data().users[0] + '_' + data().users[1]
+        && get(/databases/$(database)/documents/likes/$(other(data().users) + '_' + me())).data.status == 'accepted';
+
+      // Quem está na conversa atualiza sequência, última mensagem e o demo da galeria,
+      // mas não pode trocar quem participa.
+      allow update: if verified()
+        && me() in members()
+        && data().users == resource.data.users;
+
+      allow delete: if false;
 
       match /messages/{msg} {
-        allow read: if signedIn() && me() in get(/databases/$(database)/documents/matches/$(id)).data.users;
-        allow create: if signedIn() && request.resource.data.from == me()
-          && me() in get(/databases/$(database)/documents/matches/$(id)).data.users;
+        function inMatch() { return me() in get(/databases/$(database)/documents/matches/$(id)).data.users; }
+        allow read: if verified() && inMatch();
+        allow create: if verified() && inMatch()
+          && data().from == me()
+          && data().keys().hasOnly(['from', 'text', 'at'])
+          && data().text is string && data().text.size() > 0 && data().text.size() <= 1000
+          && data().at is number;
+        allow update, delete: if false;
       }
     }
   }

@@ -30,7 +30,7 @@ export default function CreateProfile({ ans, setAns, password, setPassword, head
           <PasswordField id="confirm" label="Repita a senha" value={confirm} placeholder="Digite a senha de novo"
             onChange={(v) => { setConfirm(v); setErr(''); }} />
           {confirm && confirm !== password && <div style={{ fontSize: 12, fontWeight: 600, color: '#A51F55', marginTop: -12 }}>As senhas não são iguais.</div>}
-          <Text id="name" label="Como quer ser chamada(o/e)" ph="Seu nome ou apelido" ans={ans} set={set} />
+          <Text id="name" label="Como quer ser chamada(o/e)" ph="Seu nome ou apelido" max={40} ans={ans} set={set} />
           <Text id="birth" label="Data de nascimento" type="date" ans={ans} set={set} />
           {bi && (
             <Field label="Calculado pela sua data"><div className="info">{bi.age} anos · Signo: {bi.sign}</div></Field>
@@ -85,7 +85,7 @@ export default function CreateProfile({ ans, setAns, password, setPassword, head
           <Single id="looking" label="Tô procurando" ans={ans} set={set}
             opts={['Relacionamento sério', 'Algo sério, mas vamos ver...', 'Algo casual', 'Amizade primeiro', 'Ainda não sei']} />
           <Field label="Sobre mim" hint={'mínimo de ' + MIN_BIO + ' caracteres'} id="bio">
-            <textarea id="bio" className="input" style={{ height: 150 }} value={ans.bio || ''} onChange={(e) => set('bio', e.target.value)}
+            <textarea id="bio" className="input" style={{ height: 150 }} maxLength={2000} value={ans.bio || ''} onChange={(e) => set('bio', e.target.value)}
               aria-describedby="bio-count"
               placeholder="O que te faz rir, o que você defende, como é o seu domingo perfeito, o que te deixa animada(o/e)... Fale da sua personalidade, não da aparência." />
             <BioCounter text={ans.bio} />
@@ -215,10 +215,10 @@ function Field({ label, hint, id, children }) {
   );
 }
 
-function Text({ id, label, hint, type = 'text', ph, ans, set }) {
+function Text({ id, label, hint, type = 'text', ph, ans, set, max = 100 }) {
   return (
     <Field label={label} hint={hint} id={id}>
-      <input id={id} className="input" type={type} value={ans[id] || ''} placeholder={ph} onChange={(e) => set(id, e.target.value)} />
+      <input id={id} className="input" type={type} maxLength={type === 'date' ? undefined : max} value={ans[id] || ''} placeholder={ph} onChange={(e) => set(id, e.target.value)} />
     </Field>
   );
 }
