@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// Regras de segurança do Firestore para o Drawn Love.
+// Cole este conteúdo em: Firebase Console > Firestore Database > Regras > Publicar.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+
+    // Perfil público: quem está logado pode ver; só a própria pessoa edita.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && me() == uid;
+    }
+
+    // Respostas do cadastro e lista de quem já passou: só a própria pessoa.
+    match /private/{uid} {
+      allow read, write: if signedIn() && me() == uid;
+    }
+
+    // Redesenhos: quem enviou e quem recebeu podem ver.
+    // Só quem envia cria; só quem recebe aprova ou recusa.
+    match /likes/{id} {
+      allow read: if signedIn() && (resource.data.from == me() || resource.data.to == me());
+      allow create: if signedIn() && request.resource.data.from == me() && id == me() + '_' + request.resource.data.to;
+      allow update: if signedIn() && resource.data.to == me()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+    }
+
+    // Conversas: só as duas pessoas do match.
+    match /matches/{id} {
+      allow read, update: if signedIn() && me() in resource.data.users;
+      allow create: if signedIn() && me() in request.resource.data.users;
+
+      match /messages/{msg} {
+        allow read: if signedIn() && me() in get(/databases/$(database)/documents/matches/$(id)).data.users;
+        allow create: if signedIn() && request.resource.data.from == me()
+          && me() in get(/databases/$(database)/documents/matches/$(id)).data.users;
+      }
+    }
+  }
+}

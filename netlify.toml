@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# App de uma página só: qualquer endereço abre o index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
