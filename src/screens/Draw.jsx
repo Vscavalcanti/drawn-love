@@ -20,8 +20,8 @@ export default function Draw({ me, setMe, onDone }) {
       </div>
       <div className="work">
         <div className="col-a">
-          <div className="portrait" style={{ flex: 1, minHeight: 0 }}>
-            <Avatar a={me} width={desktop ? 380 : 240} onPaint={paint} />
+          <div className="portrait" style={{ flex: 1, minHeight: 160, paddingTop: 12 }}>
+            <Avatar a={me} fit onPaint={paint} />
           </div>
         </div>
         <div className="col-b">

@@ -13,29 +13,54 @@
 
 * { box-sizing: border-box; }
 
+/* A página em si nunca rola: quem rola são as áreas internas (.scroll).
+   Isso evita sobra em cima/embaixo quando a barra do navegador do celular aparece ou some. */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 body {
   margin: 0;
-  min-height: 100vh;
-  background: #E9DDE4;
+  background: var(--creme);
   font-family: 'Poppins', sans-serif;
   color: var(--tinta);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
+#root { height: 100%; }
 
 button, input, textarea { font-family: inherit; }
-button { cursor: pointer; }
+button { cursor: pointer; touch-action: manipulation; }
+img, svg { max-width: 100%; }
 
-/* Moldura de celular: no computador fica centralizada, no celular ocupa a tela toda */
+/* Ocupa exatamente a área visível da tela (fixed + inset: 0 acompanha a barra do navegador),
+   respeitando o "notch" e a barra de gestos do iPhone. */
 .phone {
+  position: fixed;
+  inset: 0;
   width: 100%;
-  max-width: 430px;
-  margin: 0 auto;
-  height: 100vh;
-  height: 100dvh;
   background: var(--creme);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  position: relative;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+/* Tablet: o conteúdo de uma coluna não fica esticado demais */
+@media (min-width: 600px) and (max-width: 899px) {
+  .phone > .screen, .phone > .nav { width: 100%; max-width: 600px; margin: 0 auto; }
+}
+
+/* Foco visível só para teclado; resposta ao toque/clique em todo botão */
+:focus { outline: none; }
+:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+button:not(:disabled):active { transform: scale(0.97); }
+.btn, .chip, .pill, .icon-btn, .round, .opt, .swatch, .nav button, .segment button {
+  transition: transform .12s ease, background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+@media (hover: hover) {
+  .btn-primary:hover { background: #B32F64; }
+  .btn-secondary:hover, .pill:hover, .chip:not(.on):hover, .icon-btn:hover { background: rgba(115, 90, 150, 0.08); }
+  .round:hover { transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
 }
 
 .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
@@ -76,7 +101,7 @@ button { cursor: pointer; }
   height: 50px; border-radius: 14px; border: 2px solid var(--borda); background: var(--branco);
   padding: 0 16px; font-size: 16px; color: var(--tinta); width: 100%;
 }
-textarea.input { height: 110px; padding: 12px 16px; resize: none; font-size: 15px; }
+textarea.input { height: 110px; padding: 12px 16px; resize: none; font-size: 16px; }
 
 .chip {
   min-height: 40px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
@@ -158,8 +183,47 @@ textarea.input { height: 110px; padding: 12px 16px; resize: none; font-size: 15p
 .toggle.on .knob { left: 23px; }
 
 .nav {
-  height: 74px; flex: none; display: grid; grid-template-columns: repeat(3, 1fr);
+  height: calc(74px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
+  flex: none; display: grid; grid-template-columns: repeat(3, 1fr);
   border-top: 2px solid rgba(115, 90, 150, 0.15); background: var(--branco);
+}
+/* Tela sem menu embaixo: deixa espaço para a barra de gestos do iPhone */
+.phone > .screen:last-child, .phone > .split:last-child { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Tela inicial: os dois personagens */
+.welcome-duo { display: flex; gap: 14px; justify-content: center; }
+.welcome-card {
+  width: clamp(104px, 30vw, 132px); aspect-ratio: 5 / 6; border-radius: 22px; overflow: hidden;
+  background: var(--rosa); border: 3px solid var(--tinta); box-shadow: 0 6px 0 var(--tinta);
+  display: flex; align-items: flex-end; padding-top: 10px;
+}
+@media (max-height: 640px) { .welcome-duo { display: none; } }
+
+/* Descubra: fundo suave atrás dos botões flutuantes, para o texto não brigar com eles */
+@media (max-width: 899px) {
+  .actions { padding-top: 28px; bottom: 0; padding-bottom: 14px; background: linear-gradient(to bottom, rgba(253, 242, 238, 0), var(--creme) 55%); }
+}
+
+/* Galeria */
+.photo-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.photo-thumb {
+  position: relative; aspect-ratio: 3 / 4; border: none; padding: 0; border-radius: 14px; overflow: hidden;
+  background: rgba(115, 90, 150, 0.12);
+}
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s ease; -webkit-user-select: none; user-select: none; }
+@media (hover: hover) { .photo-thumb:hover img { transform: scale(1.03); } }
+.photo-who {
+  position: absolute; left: 6px; bottom: 6px; font-size: 10px; font-weight: 700; color: #fff;
+  background: rgba(30, 23, 38, 0.6); padding: 3px 8px; border-radius: 999px;
+}
+.viewer {
+  flex: 1; min-height: 0; border-radius: 22px; overflow: hidden; position: relative;
+  display: flex; align-items: center; justify-content: center; background: #000;
+}
+.viewer img { max-width: 100%; max-height: 100%; object-fit: contain; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.watermark {
+  position: absolute; right: 12px; bottom: 12px; font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); pointer-events: none;
 }
 .nav button {
   border: none; background: transparent; color: var(--cinza-claro);
@@ -185,7 +249,7 @@ textarea.input { height: 110px; padding: 12px 16px; resize: none; font-size: 15p
 .dots div { height: 8px; border-radius: 999px; background: rgba(115, 90, 150, 0.18); }
 .dots div.on { background: var(--magenta); }
 
-.overlay { position: absolute; inset: 0; background: #1E1726; display: flex; flex-direction: column; padding: 16px; gap: 12px; z-index: 5; }
+.overlay { position: absolute; inset: 0; background: #1E1726; display: flex; flex-direction: column; padding: 16px 16px max(16px, env(safe-area-inset-bottom)); gap: 12px; z-index: 5; }
 
 /* ---------- Layout em colunas (no celular vira uma coluna só) ---------- */
 .cols { display: flex; flex-direction: column; gap: 12px; }
@@ -255,3 +319,116 @@ textarea.input { height: 110px; padding: 12px 16px; resize: none; font-size: 15p
 button:disabled { opacity: 0.6; cursor: default; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Logo: coração + nome pequeno embaixo */
+.brand { display: inline-flex; flex-direction: column; gap: 4px; }
+.brand-name { font-family: 'Poppins', sans-serif; font-weight: 800; color: var(--magenta); letter-spacing: 0.5px; line-height: 1; }
+.login-logo { margin: 4px 0 8px; }
+
+/* ------------------------------ Jogos ------------------------------ */
+.segment.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tab-dot { position: absolute; top: 8px; right: 10px; width: 9px; height: 9px; border-radius: 999px; background: var(--magenta); }
+.system-msg {
+  align-self: center; max-width: 90%; border: 1px dashed var(--roxo); background: rgba(115, 90, 150, 0.08);
+  color: var(--roxo); font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; text-align: center;
+}
+.game { max-width: 560px; margin: 0 auto; width: 100%; }
+.turn-bar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 700;
+  background: rgba(115, 90, 150, 0.1); color: var(--roxo);
+}
+.turn-bar.mine { background: rgba(201, 58, 115, 0.12); color: var(--magenta); }
+.turn-dot { width: 8px; height: 8px; border-radius: 999px; background: currentColor; flex: none; }
+.turn-bar.mine .turn-dot { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+.result-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-radius: 14px; font-size: 14px; background: rgba(31, 122, 77, 0.12); color: #1F5B3D; }
+.result-bar.bad { background: rgba(115, 90, 150, 0.12); color: var(--tinta); }
+
+.game-active {
+  display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 18px; text-align: left;
+  border: 2px solid var(--magenta); background: rgba(242, 107, 145, 0.1); color: var(--tinta);
+}
+.game-badge { width: 14px; height: 40px; border-radius: 999px; flex: none; }
+.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.game-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 18px; background: var(--branco);
+  border: 2px solid rgba(115, 90, 150, 0.15);
+}
+.game-card-top { height: 54px; border-radius: 12px; background: var(--game); display: flex; align-items: center; justify-content: center; }
+.game-history { display: flex; justify-content: space-between; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(115, 90, 150, 0.2); background: var(--branco); color: var(--tinta); font-size: 14px; }
+
+/* Termo */
+.termo-board { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.termo-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; width: min(100%, 300px); position: relative; }
+.termo-tile {
+  aspect-ratio: 1; border-radius: 10px; border: 2px solid rgba(115, 90, 150, 0.25); background: var(--branco);
+  display: flex; align-items: center; justify-content: center; font-size: clamp(20px, 6vw, 26px); font-weight: 800; color: var(--tinta);
+}
+.termo-row.current .termo-tile { border-color: rgba(115, 90, 150, 0.5); }
+.termo-tile.typed { border-color: var(--roxo); }
+.termo-tile.certo, .kb-key.certo, .pk-cell.certo { background: #2E8B57; border-color: #2E8B57; color: #fff; }
+.termo-tile.lugar, .kb-key.lugar, .pk-cell.lugar { background: #E0A526; border-color: #E0A526; color: #2A1F00; }
+.termo-tile.errado, .kb-key.errado { background: #8A7C9A; border-color: #8A7C9A; color: #fff; }
+.termo-by { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 6px; font-size: 10px; font-weight: 700; color: var(--cinza); white-space: nowrap; }
+@media (max-width: 420px) { .termo-by { display: none; } }
+.keyboard { display: flex; flex-direction: column; gap: 6px; }
+.keyboard.waiting { opacity: 0.55; }
+.kb-row { display: flex; gap: 4px; justify-content: center; }
+.kb-key {
+  flex: 1; max-width: 42px; height: 48px; border-radius: 8px; border: none; background: rgba(115, 90, 150, 0.15);
+  color: var(--tinta); font-weight: 800; font-size: 14px; padding: 0;
+}
+.kb-key.wide { max-width: 72px; flex: 1.6; font-size: 11px; }
+.kb-key.enter { background: var(--magenta); color: #fff; }
+
+/* Desenha e adivinha */
+.secret-word { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #FFF6D6; color: #5A4300; font-size: 15px; }
+.draw-stage { height: min(48vh, 380px); display: flex; }
+.draw-image { width: 100%; height: 100%; object-fit: contain; background: #fff; border-radius: 24px; border: 3px solid var(--roxo); }
+.draw-empty { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; border-radius: 24px; border: 3px dashed rgba(115, 90, 150, 0.4); color: var(--cinza); background: #fff; }
+.guess-chip { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: rgba(115, 90, 150, 0.12); color: var(--tinta); }
+.guess-chip.ok { background: #2E8B57; color: #fff; }
+
+/* Pokédle */
+.pk-search { position: relative; }
+.pk-options {
+  position: absolute; z-index: 3; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none;
+  background: var(--branco); border-radius: 14px; border: 2px solid rgba(115, 90, 150, 0.25); box-shadow: 0 8px 24px rgba(58, 46, 74, 0.15);
+}
+.pk-options button { width: 100%; text-align: left; min-height: 44px; padding: 0 12px; border: none; background: transparent; border-radius: 10px; font-size: 15px; color: var(--tinta); }
+.pk-options button:hover, .pk-options button:focus-visible { background: rgba(115, 90, 150, 0.1); }
+.pk-num { color: var(--cinza); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pk-table-wrap { overflow-x: auto; border-radius: 14px; -webkit-overflow-scrolling: touch; }
+.pk-table { border-collapse: separate; border-spacing: 4px; font-size: 12px; min-width: 560px; }
+.pk-table th { color: var(--cinza); font-weight: 700; padding: 2px 4px; text-align: center; }
+.pk-name { position: sticky; left: 0; background: var(--creme); text-align: left !important; color: var(--tinta) !important; font-size: 13px; min-width: 96px; }
+.pk-name span { display: block; font-size: 10px; color: var(--cinza); font-weight: 600; }
+.pk-cell { padding: 8px 6px; border-radius: 8px; text-align: center; font-weight: 700; background: #D95C5C; color: #fff; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pk-cell.errado { background: #D95C5C; }
+.pk-arrow { margin-left: 3px; }
+
+
+
+
+
+
+/* Xadrez */
+.chess-board {
+  display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); width: min(100%, 440px); margin: 0 auto;
+  aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 3px solid var(--tinta);
+}
+.sq { position: relative; border: none; padding: 0; display: flex; align-items: center; justify-content: center; aspect-ratio: 1; }
+.sq.light { background: #F6E3DD; }
+.sq.dark { background: #B88AA6; }
+.sq.last { box-shadow: inset 0 0 0 100px rgba(242, 208, 70, 0.35); }
+.sq.sel { box-shadow: inset 0 0 0 100px rgba(62, 107, 170, 0.45); }
+.sq.check { box-shadow: inset 0 0 0 100px rgba(217, 54, 62, 0.6); }
+.sq.target::after { content: ''; width: 28%; height: 28%; border-radius: 999px; background: rgba(30, 23, 38, 0.35); }
+.sq.capture::after { content: ''; position: absolute; inset: 6%; border-radius: 999px; border: 4px solid rgba(30, 23, 38, 0.4); }
+.piece { font-size: clamp(26px, 9vw, 44px); line-height: 1; pointer-events: none; }
+.piece.w { color: #fff; -webkit-text-stroke: 1.5px #1E1A22; text-shadow: 0 1px 0 #1E1A22; }
+.piece.b { color: #1E1A22; }
+.coord { position: absolute; font-size: 9px; font-weight: 700; color: rgba(30, 23, 38, 0.55); pointer-events: none; }
+.coord.rank { top: 2px; left: 3px; }
+.coord.file { bottom: 1px; right: 3px; }
+.chess-moves { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--cinza); font-variant-numeric: tabular-nums; }

@@ -4,14 +4,16 @@
 
 const INK = '#1E1A22';
 
-export default function Avatar({ a, width = 240, onPaint }) {
+// fit = true: o desenho cresce até preencher a moldura onde está (sem sobrar espaço)
+export default function Avatar({ a, width = 240, onPaint, fit = false }) {
   const head = a.head || 'f';
   const p = (part) => (onPaint ? { onClick: () => onPaint(part), style: { cursor: 'pointer' } } : {});
   const hair = p('hair'), shirt = p('shirt'), accent = p('accent'), hat = p('hat'), skin = p('skin');
   const is = (k, v) => a[k] === v;
 
   return (
-    <svg viewBox="0 0 200 220" width={width} height={Math.round(width * 1.1)} role="img" aria-label="Personagem desenhado">
+    <svg viewBox="0 0 200 220" width={fit ? '100%' : width} height={fit ? '100%' : Math.round(width * 1.1)}
+      preserveAspectRatio="xMidYMax meet" style={fit ? { display: 'block' } : undefined} role="img" aria-label="Personagem desenhado">
       {/* cabelo de trás */}
       {is('hairStyle', 'franja') && (
         <path {...hair} d="M140 96 C178 98 186 146 164 176 C160 156 154 136 136 120 Z" fill={a.hair} stroke={INK} strokeWidth="5" strokeLinejoin="round" />
@@ -26,6 +28,28 @@ export default function Avatar({ a, width = 240, onPaint }) {
         </g>
       )}
       {is('hairStyle', 'coque') && <circle {...hair} cx="100" cy="44" r="22" fill={a.hair} stroke={INK} strokeWidth="5" />}
+      {is('hairStyle', 'afro') && (
+        <g {...hair} fill={a.hair} stroke={INK} strokeWidth="5">
+          <circle cx="100" cy="92" r="66" />
+          {AFRO_PUFFS.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} />)}
+          <circle cx="100" cy="92" r="62" stroke="none" />
+        </g>
+      )}
+      {is('hairStyle', 'cachos-longos') && (
+        <g {...hair} fill={a.hair} stroke={INK} strokeWidth="4">
+          {LONG_CURLS.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} />)}
+        </g>
+      )}
+      {is('hairStyle', 'trancas') && (
+        <g {...hair}>
+          {[44, 56, 144, 156].map((x) => (
+            <g key={x}>
+              <rect x={x - 6} y="96" width="12" height="104" rx="6" fill={a.hair} stroke={INK} strokeWidth="4" />
+              <path d={`M${x - 5} 110 l10 8 M${x - 5} 128 l10 8 M${x - 5} 146 l10 8 M${x - 5} 164 l10 8 M${x - 5} 182 l10 8`} stroke={INK} strokeWidth="2" />
+            </g>
+          ))}
+        </g>
+      )}
 
       {/* pescoço */}
       <rect {...skin} x="88" y="144" width="24" height="28" fill={a.skin} stroke={INK} strokeWidth="5" />
@@ -67,9 +91,19 @@ export default function Avatar({ a, width = 240, onPaint }) {
       {/* orelhas e cabeça */}
       <circle {...skin} cx="52" cy="116" r="11" fill={a.skin} stroke={INK} strokeWidth="5" />
       <circle {...skin} cx="148" cy="116" r="11" fill={a.skin} stroke={INK} strokeWidth="5" />
-      {head === 'm' ? (
+      {head === 'm' && (
         <path {...skin} d="M52 106 C52 64 148 64 148 106 C148 146 128 160 100 160 C72 160 52 146 52 106 Z" fill={a.skin} stroke={INK} strokeWidth="5" strokeLinejoin="round" />
-      ) : (
+      )}
+      {head === 'oval' && (
+        <ellipse {...skin} cx="100" cy="110" rx="45" ry="52" fill={a.skin} stroke={INK} strokeWidth="5" />
+      )}
+      {head === 'quadrado' && (
+        <path {...skin} d="M52 84 Q52 64 74 64 L126 64 Q148 64 148 84 L148 132 Q148 160 100 160 Q52 160 52 132 Z" fill={a.skin} stroke={INK} strokeWidth="5" strokeLinejoin="round" />
+      )}
+      {head === 'coracao' && (
+        <path {...skin} d="M50 96 C50 64 150 64 150 96 C150 128 124 158 100 162 C76 158 50 128 50 96 Z" fill={a.skin} stroke={INK} strokeWidth="5" strokeLinejoin="round" />
+      )}
+      {(head === 'f' || !['m', 'oval', 'quadrado', 'coracao'].includes(head)) && (
         <ellipse {...skin} cx="100" cy="112" rx="50" ry="47" fill={a.skin} stroke={INK} strokeWidth="5" />
       )}
 
@@ -106,6 +140,42 @@ export default function Avatar({ a, width = 240, onPaint }) {
       {is('hairStyle', 'coque') && (
         <path {...hair} d="M50 112 C46 70 72 54 100 54 C128 54 154 70 150 112 C144 90 124 76 100 76 C76 76 56 90 50 112 Z" fill={a.hair} stroke={INK} strokeWidth="5" strokeLinejoin="round" />
       )}
+      {is('hairStyle', 'afro') && (
+        <path {...hair} d="M52 106 C54 74 146 74 148 106 C132 92 68 92 52 106 Z" fill={a.hair} stroke={INK} strokeWidth="5" strokeLinejoin="round" />
+      )}
+      {is('hairStyle', 'cachos-longos') && (
+        <g {...hair} fill={a.hair} stroke={INK} strokeWidth="4">
+          <circle cx="58" cy="92" r="12" /><circle cx="70" cy="74" r="15" /><circle cx="90" cy="64" r="16" />
+          <circle cx="112" cy="64" r="16" /><circle cx="131" cy="74" r="15" /><circle cx="143" cy="92" r="12" />
+        </g>
+      )}
+      {is('hairStyle', 'crespo-curto') && (
+        <g {...hair} fill={a.hair} stroke={INK} strokeWidth="3.5">
+          <path d="M52 104 C52 70 148 70 148 104 C136 90 64 90 52 104 Z" strokeWidth="5" />
+          {SHORT_COILS.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="8" />)}
+        </g>
+      )}
+      {is('hairStyle', 'trancas') && (
+        <g {...hair} fill={a.hair} stroke={INK} strokeWidth="5" strokeLinejoin="round">
+          <path d="M48 112 C44 70 80 50 100 54 L100 82 C78 82 58 94 48 112 Z" />
+          <path d="M152 112 C156 70 120 50 100 54 L100 82 C122 82 142 94 152 112 Z" />
+        </g>
+      )}
+      {is('hairStyle', 'raspado') && (
+        <path {...hair} d="M52 102 C52 66 148 66 148 102 C140 86 122 78 100 78 C78 78 60 86 52 102 Z" fill={a.hair} stroke={INK} strokeWidth="4" strokeLinejoin="round" opacity="0.85" />
+      )}
+      {is('hairStyle', 'moicano') && (
+        <g {...hair}>
+          <path d="M52 102 C52 70 148 70 148 102 C140 88 122 80 100 80 C78 80 60 88 52 102 Z" fill={a.hair} opacity="0.35" />
+          <path d="M82 80 C80 50 92 30 104 22 C114 36 120 56 118 80 C106 76 94 76 82 80 Z" fill={a.hair} stroke={INK} strokeWidth="5" strokeLinejoin="round" />
+        </g>
+      )}
+      {is('hairStyle', 'lateral') && (
+        <g {...hair}>
+          <path d="M48 112 C40 66 80 46 112 50 C144 54 160 80 152 112 C146 96 136 86 122 82 C102 92 74 94 54 100 C52 104 50 108 48 112 Z" fill={a.hair} stroke={INK} strokeWidth="5" strokeLinejoin="round" />
+          <path d="M120 54 C116 66 112 76 104 86" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        </g>
+      )}
       {is('hairStyle', 'careca') && (
         <path d="M74 82 Q86 72 100 74" fill="none" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
       )}
@@ -123,7 +193,22 @@ export default function Avatar({ a, width = 240, onPaint }) {
   );
 }
 
-const BROWS = 'M74 99 Q82 94 90 98 M110 98 Q118 94 126 99';
+// Bolinhas que formam a textura dos cabelos crespos e cacheados
+const AFRO_PUFFS = Array.from({ length: 16 }, (_, i) => {
+  const t = (i / 16) * Math.PI * 2;
+  return [100 + Math.cos(t) * 62, 92 + Math.sin(t) * 62, 14];
+}).filter(([, y]) => y < 150);
+const LONG_CURLS = [
+  [60, 70, 26], [100, 52, 30], [140, 70, 26],
+  ...[96, 116, 136, 156, 176].flatMap((y) => [[48, y, 13], [152, y, 13]]),
+  ...[106, 128, 150, 172, 192].flatMap((y) => [[38, y, 9], [162, y, 9]]),
+];
+const SHORT_COILS = Array.from({ length: 13 }, (_, i) => {
+  const t = Math.PI + (i / 12) * Math.PI;
+  return [100 + Math.cos(t) * 48, 102 + Math.sin(t) * 34];
+});
+
+const BROWS ='M74 99 Q82 94 90 98 M110 98 Q118 94 126 99';
 
 function Pupils({ left = true, right = true }) {
   return (

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Avatar from '../components/Avatar.jsx';
 import Mascot from '../components/Mascot.jsx';
-import { Back, Send, Lock, Photo, Close } from '../components/Icons.jsx';
-import { watchMessages, sendMessage, unlockDemo, streakInfo, MIN_CHARS } from '../services/api.js';
+import { Back, Send, Lock } from '../components/Icons.jsx';
+import Gallery from '../components/Gallery.jsx';
+import GamesTab from '../games/GamesTab.jsx';
+import { watchMessages, sendMessage, unlockDemo, streakInfo, watchGames, MIN_CHARS } from '../services/api.js';
 
 const MOOD_STYLE = {
   ok: { color: '#C93A73', bg: 'rgba(242,107,145,0.18)' },
@@ -11,16 +13,15 @@ const MOOD_STYLE = {
   curta: { color: '#9A5A00', bg: 'rgba(232,176,75,0.20)' },
   zerou: { color: '#3E6BAA', bg: 'rgba(62,107,170,0.12)' },
 };
-const PHOTOS = ['#F26B91', '#735A96', '#3E6BAA', '#C98A2B', '#C93A73', '#5B86C2'];
 
 // Conversa em tempo real. O dia conta para a sequência quando AS DUAS pessoas
 // mandam pelo menos uma mensagem de verdade (regra provisória: 25+ caracteres, no lugar da IA).
 export default function Chat({ match, uid, myName, back }) {
   const [msgs, setMsgs] = useState([]);
+  const [games, setGames] = useState(null);
   const [tab, setTab] = useState('conversa');
   const [draft, setDraft] = useState('');
   const [short, setShort] = useState(false);
-  const [photo, setPhoto] = useState(-1);
   const [error, setError] = useState('');
   const endRef = useRef(null);
 
@@ -35,9 +36,12 @@ export default function Chat({ match, uid, myName, back }) {
     curta: 'Mensagens curtas não contam. Capricha!',
     zerou: 'A sequência zerou. Recomecem hoje!',
   }[state];
-  const mood = MOOD_STYLE[state];
+  const mood = MOOD_STYLE[s.unlocked ? 'ok' : state];
+  const moodLine = s.unlocked ? 'Coração completo! A galeria de vocês está aberta.' : moodText;
 
   useEffect(() => watchMessages(match.id, setMsgs), [match.id]);
+  useEffect(() => watchGames(match.id, setGames, (e) => setError(e.message)), [match.id]);
+  const myGameTurn = (games || []).some((g) => g.status === 'playing' && g.turn === uid);
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [msgs.length, tab]);
 
   const send = async () => {
@@ -58,22 +62,25 @@ export default function Chat({ match, uid, myName, back }) {
         <div style={{ fontWeight: 800, fontSize: 20 }}>{name}</div>
       </div>
 
-      {/* Mascote da sequência: o lápis desenha o coração conforme os dias passam */}
-      <div className="card row gap-12" style={{ margin: '0 16px', padding: '10px 14px', background: mood.bg }}>
-        <div style={{ flex: 'none' }}><Mascot progress={s.unlocked ? 15 : s.streak} mood={state} size={68} /></div>
+      {/* Mascote da sequência: o lápis desenha o coração conforme os dias passam (escondido na aba Jogos, para sobrar espaço) */}
+      {tab !== 'jogos' && <div className="card row gap-12" style={{ margin: '0 16px', padding: '10px 14px', background: mood.bg }}>
+        <div style={{ flex: 'none' }}><Mascot progress={s.unlocked ? 15 : s.streak} mood={s.unlocked ? 'ok' : state} size={68} /></div>
         <div className="col grow gap-6" style={{ minWidth: 0 }}>
           <div className="row gap-6" style={{ alignItems: 'baseline' }}>
             <span className="display" style={{ fontSize: 22, color: mood.color }}>{s.unlocked ? 15 : s.streak}</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: mood.color }}>de 15 dias</span>
           </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: mood.color }}>{moodText}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: mood.color }}>{moodLine}</div>
           <div className="dots">{Array.from({ length: 15 }, (_, i) => <div key={i} className={i < s.streak || s.unlocked ? 'on' : ''} />)}</div>
         </div>
-      </div>
+      </div>}
 
-      <div className="segment" style={{ margin: '12px 16px 0' }}>
-        <button className={tab === 'conversa' ? 'on' : ''} onClick={() => setTab('conversa')}>Conversa</button>
-        <button className={tab === 'galeria' ? 'on' : ''} onClick={() => setTab('galeria')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+      <div className="segment three" style={{ margin: '12px 16px 0' }} role="tablist">
+        <button role="tab" aria-selected={tab === 'conversa'} className={tab === 'conversa' ? 'on' : ''} onClick={() => setTab('conversa')}>Conversa</button>
+        <button role="tab" aria-selected={tab === 'jogos'} className={tab === 'jogos' ? 'on' : ''} onClick={() => setTab('jogos')} style={{ position: 'relative' }}>
+          Jogos{myGameTurn && <span className="tab-dot" aria-label="é a sua vez" />}
+        </button>
+        <button role="tab" aria-selected={tab === 'galeria'} className={tab === 'galeria' ? 'on' : ''} onClick={() => setTab('galeria')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           {!s.unlocked && <Lock />}Galeria
         </button>
       </div>
@@ -82,7 +89,9 @@ export default function Chat({ match, uid, myName, back }) {
         <>
           <div className="scroll col gap-8" style={{ padding: '14px 16px' }}>
             {msgs.length === 0 && <p className="sub" style={{ textAlign: 'center' }}>Comece a conversa. Fale de você, não da aparência.</p>}
-            {msgs.map((m) => <div key={m.id} className={'bubble ' + (m.from === uid ? 'me' : 'them')}>{m.text}</div>)}
+            {msgs.map((m) => (m.kind === 'system'
+              ? <button key={m.id} className="system-msg" onClick={() => setTab('jogos')}>{m.from === uid ? 'Você' : name}: {m.text}</button>
+              : <div key={m.id} className={'bubble ' + (m.from === uid ? 'me' : 'them')}>{m.text}</div>))}
             <div ref={endRef} />
           </div>
           {error && <div role="alert" className="error" style={{ margin: '0 16px 8px' }}>{error}</div>}
@@ -95,6 +104,8 @@ export default function Chat({ match, uid, myName, back }) {
         </>
       )}
 
+      {tab === 'jogos' && <GamesTab match={match} uid={uid} names={match.names} games={games} />}
+
       {tab === 'galeria' && !s.unlocked && (
         <div className="grow col center gap-12" style={{ padding: 24 }}>
           <div style={{ width: 84, height: 84, borderRadius: 999, background: 'rgba(115,90,150,0.12)', color: 'var(--roxo)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Lock size={38} /></div>
@@ -106,34 +117,7 @@ export default function Chat({ match, uid, myName, back }) {
       )}
 
       {tab === 'galeria' && s.unlocked && (
-        <div className="scroll col gap-10" style={{ padding: '14px 16px' }}>
-          <p className="sub" style={{ fontSize: 12 }}>Só vocês dois veem estas fotos. (No teste, os quadrados ocupam o lugar das fotos.)</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-            {PHOTOS.map((c, i) => (
-              <button key={i} aria-label={'Foto ' + (i + 1)} onClick={() => setPhoto(i)}
-                style={{ aspectRatio: '3 / 4', borderRadius: 14, border: 'none', background: c, color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, fontWeight: 600 }}>
-                <Photo />Foto {i + 1}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {photo >= 0 && (
-        <div className="overlay">
-          <div className="row between" style={{ color: 'var(--creme)' }}>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>Foto {photo + 1} de {PHOTOS.length}</div>
-            <button className="icon-btn" aria-label="Fechar" onClick={() => setPhoto(-1)} style={{ borderColor: 'var(--creme)', color: 'var(--creme)' }}><Close size={20} /></button>
-          </div>
-          <div className="grow" style={{ minHeight: 0, borderRadius: 22, background: PHOTOS[photo], position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-            <Photo size={72} />
-            <div style={{ position: 'absolute', bottom: 14, right: 14, fontSize: 11, fontWeight: 600, opacity: 0.85 }}>Drawn Love · visto por {myName}</div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <button className="btn" style={{ minHeight: 48, background: 'transparent', color: 'var(--creme)', border: '2px solid var(--creme)' }} onClick={() => setPhoto((photo + PHOTOS.length - 1) % PHOTOS.length)}>Anterior</button>
-            <button className="btn" style={{ minHeight: 48, background: 'var(--creme)', color: 'var(--magenta)' }} onClick={() => setPhoto((photo + 1) % PHOTOS.length)}>Próxima</button>
-          </div>
-        </div>
+        <Gallery matchId={match.id} uid={uid} names={match.names} myName={myName} />
       )}
     </div>
   );

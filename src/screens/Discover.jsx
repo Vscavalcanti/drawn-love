@@ -1,12 +1,13 @@
 import Avatar from '../components/Avatar.jsx';
 import ProfileSections from '../components/ProfileSections.jsx';
 import { Close, Star, Heart } from '../components/Icons.jsx';
+import { HeartMark } from '../components/Logo.jsx';
 
 // 3 · DESCUBRA: pessoas reais que já criaram o personagem.
 export default function Discover({ person, loading, onPass, onLike, onRefresh }) {
   const header = (
     <div className="row between" style={{ padding: '16px 20px 10px' }}>
-      <div className="logo mobile-only" style={{ fontSize: 26, transform: 'rotate(-3deg)' }}>DRAWN LOVE</div>
+      <div className="mobile-only row gap-6"><HeartMark size={30} /><span className="brand-name" style={{ fontSize: 15 }}>Drawn Love</span></div>
       <div className="step-tag" style={{ color: 'var(--magenta)' }}>3 · DESCUBRA</div>
     </div>
   );
@@ -35,9 +36,9 @@ export default function Discover({ person, loading, onPass, onLike, onRefresh })
       <div className="scroll" style={{ padding: '0 16px 104px' }}>
         <div className="cols">
           <div className="col-a">
-            <div className="portrait" style={{ height: 320, position: 'relative' }}>
+            <div className="portrait" style={{ height: 'min(56vh, 380px)', paddingTop: 16, position: 'relative' }}>
               <div style={{ position: 'absolute', left: 14, top: 14, fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(58,46,74,0.6)', padding: '5px 10px', borderRadius: 999 }}>Autorretrato em 1 min</div>
-              <Avatar a={person.me} width={260} />
+              <Avatar a={person.me} fit />
             </div>
             <div className="row gap-8" style={{ alignItems: 'baseline', padding: '2px 4px' }}>
               <span style={{ fontSize: 30, fontWeight: 800 }}>{p.name}</span>

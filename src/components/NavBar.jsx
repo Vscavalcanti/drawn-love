@@ -1,3 +1,4 @@
+import Logo from './Logo.jsx';
 import { Pencil, Chat, User } from './Icons.jsx';
 
 export default function NavBar({ screen, go, badge = 0 }) {
@@ -9,7 +10,7 @@ export default function NavBar({ screen, go, badge = 0 }) {
   );
   return (
     <nav className="nav">
-      <div className="logo nav-logo">DRAWN LOVE</div>
+      <div className="nav-logo"><Logo size={56} nameSize={15} /></div>
       {item('discover', 'Descubra', Pencil)}
       {item('chats', 'Conversas', Chat, badge)}
       {item('profile', 'Perfil', User)}

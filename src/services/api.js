@@ -9,6 +9,8 @@
 
 import { auth, data } from './store.js';
 import { birthInfo } from '../utils/birth.js';
+import { preparePhoto } from '../utils/image.js';
+import { usingFirebase as fbOn } from './store.js';
 
 export { auth, usingFirebase, preload } from './store.js';
 
@@ -116,11 +118,11 @@ export const today = () => new Date().toLocaleDateString('en-CA'); // AAAA-MM-DD
 export const watchMessages = (matchId, cb) =>
   data.watch('matches/' + matchId + '/messages', null, (list) => cb(list.sort((a, b) => a.at - b.at)));
 
-export async function sendMessage(matchId, uid, text) {
+export async function sendMessage(matchId, uid, text, { system = false } = {}) {
   const at = Date.now();
-  await data.add('matches/' + matchId + '/messages', { from: uid, text, at });
+  await data.add('matches/' + matchId + '/messages', system ? { from: uid, text, at, kind: 'system' } : { from: uid, text, at });
   const patch = { last: { from: uid, text, at } };
-  if (text.length >= MIN_CHARS) patch.days = { [today()]: { [uid]: true } };
+  if (!system && text.length >= MIN_CHARS) patch.days = { [today()]: { [uid]: true } };
   await data.set('matches/' + matchId, patch);
 }
 
@@ -145,3 +147,56 @@ export function streakInfo(match, uid) {
   else if (streak === 0 && hadBefore) state = 'zerou';
   return { streak, state, unlocked: streak >= 15 || match.demoUnlocked, otherName: match.names?.[other] || '' };
 }
+
+/* ------------------------------- Galeria ------------------------------- */
+// As fotos ficam no próprio Firestore (funciona no plano grátis, sem Storage):
+//   matches/{id}/photos/{foto}     from, thumb (miniatura ~20 KB), w, h, at   -> carrega na grade
+//   matches/{id}/photoData/{foto}  from, data (foto comprimida, até ~700 KB)  -> só quando abre a foto
+
+export const MAX_PHOTOS_EACH = 12;
+
+export const watchPhotos = (matchId, cb, onError) =>
+  data.watch('matches/' + matchId + '/photos', null, (list) => cb(list.sort((a, b) => a.at - b.at)), onError);
+
+export async function uploadPhoto(matchId, uid, file) {
+  // No modo local o navegador guarda pouco (~5 MB), então a foto fica menor.
+  const opts = fbOn ? {} : { maxSide: 640, maxBytes: 150000 };
+  const p = await preparePhoto(file, opts);
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  await data.set('matches/' + matchId + '/photoData/' + id, { from: uid, data: p.full }, false);
+  await data.set('matches/' + matchId + '/photos/' + id, { from: uid, thumb: p.thumb, w: p.w, h: p.h, at: Date.now() }, false);
+}
+
+export async function loadPhoto(matchId, photoId) {
+  const d = await data.get('matches/' + matchId + '/photoData/' + photoId);
+  return d?.data || null;
+}
+
+export async function deletePhoto(matchId, photoId) {
+  await data.remove('matches/' + matchId + '/photos/' + photoId);
+  await data.remove('matches/' + matchId + '/photoData/' + photoId);
+}
+
+/* -------------------------------- Jogos -------------------------------- */
+//   matches/{id}/games/{jogo}   type, createdBy, status ('playing' | 'won' | 'lost' | 'draw' | 'ended'),
+//                               turn (de quem é a vez), state (dados do jogo), at, updatedAt
+
+export const watchGames = (matchId, cb, onError) =>
+  data.watch('matches/' + matchId + '/games', null, (list) => cb(list.sort((a, b) => b.at - a.at)), onError);
+
+export async function createGame(matchId, uid, type, turn, state, label, fixedId) {
+  const id = fixedId || Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  await data.set('matches/' + matchId + '/games/' + id, {
+    type, createdBy: uid, status: 'playing', turn, state, at: Date.now(), updatedAt: Date.now(),
+  }, false);
+  // aviso no chat (não conta para a sequência de 15 dias)
+  if (label) await sendMessage(matchId, uid, `Começou um jogo: ${label}. Vem jogar na aba Jogos!`, { system: true });
+  return id;
+}
+
+export const getGame = (matchId, gameId) => data.get('matches/' + matchId + '/games/' + gameId);
+
+export const updateGame = (matchId, gameId, patch) =>
+  data.set('matches/' + matchId + '/games/' + gameId, { ...patch, updatedAt: Date.now() });
+
+export const otherOf = (match, uid) => match.users.find((u) => u !== uid);

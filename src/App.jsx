@@ -1,3 +1,4 @@
+import Logo from './components/Logo.jsx';
 import { useCallback, useEffect, useState } from 'react';
 import Welcome from './screens/Welcome.jsx';
 import Login from './screens/Login.jsx';
@@ -157,7 +158,7 @@ export default function App() {
 
   let content;
   switch (screen) {
-    case 'loading': content = <div className="screen center"><div className="logo" style={{ fontSize: 48 }}>DRAWN LOVE</div></div>; break;
+    case 'loading': content = <div className="screen center"><Logo size={88} /></div>; break;
     case 'welcome': content = <Welcome go={setScreen} />; break;
     case 'login': content = <Login go={setScreen} onLogin={login} onReset={auth.resetPassword} />; break;
     case 'create': content = (

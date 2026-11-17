@@ -13,9 +13,12 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
     function me() { return request.auth.uid; }
-    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    // TESTE: confirmação de e-mail desligada, basta estar logado.
+    // Para exigir e-mail confirmado de novo, troque a linha abaixo por:
+    //   function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function verified() { return signedIn(); }
     function data() { return request.resource.data; }
-    function str(v, max) { return v is string && v.size() <= max; }
+    function str(v, limit) { return v is string && v.size() <= limit; }
 
     // ---------- Perfil público ----------
     // Ler outras pessoas: só com e-mail confirmado.
@@ -83,10 +86,48 @@ service cloud.firestore {
         allow read: if verified() && inMatch();
         allow create: if verified() && inMatch()
           && data().from == me()
-          && data().keys().hasOnly(['from', 'text', 'at'])
+          && data().keys().hasOnly(['from', 'text', 'at', 'kind'])
+          && (!('kind' in data()) || data().kind == 'system')
           && data().text is string && data().text.size() > 0 && data().text.size() <= 1000
           && data().at is number;
         allow update, delete: if false;
+      }
+
+      // Jogos (Termo, Desenha e adivinha, Pokédle, Xadrez): só as duas pessoas do match.
+      // Quem cria é quem está logado; ninguém troca o tipo do jogo depois; nada é apagado.
+      match /games/{game} {
+        function inMatch() { return me() in get(/databases/$(database)/documents/matches/$(id)).data.users; }
+        allow read: if verified() && inMatch();
+        allow create: if verified() && inMatch()
+          && data().createdBy == me()
+          && data().type in ['termo', 'desenho', 'pokedle', 'xadrez'];
+        allow update: if verified() && inMatch()
+          && data().type == resource.data.type
+          && data().createdBy == resource.data.createdBy;
+        allow delete: if false;
+      }
+
+      // Galeria: só as duas pessoas veem; cada uma envia e apaga só as próprias fotos.
+      // photos = miniatura (até ~60 KB); photoData = foto comprimida (até ~900 KB, limite do Firestore é 1 MB).
+      match /photos/{photo} {
+        function inMatch() { return me() in get(/databases/$(database)/documents/matches/$(id)).data.users; }
+        allow read: if verified() && inMatch();
+        allow create: if verified() && inMatch()
+          && data().from == me()
+          && data().keys().hasOnly(['from', 'thumb', 'w', 'h', 'at'])
+          && str(data().thumb, 80000) && data().thumb[0:23] == 'data:image/jpeg;base64,';
+        allow delete: if verified() && inMatch() && resource.data.from == me();
+        allow update: if false;
+      }
+      match /photoData/{photo} {
+        function inMatch() { return me() in get(/databases/$(database)/documents/matches/$(id)).data.users; }
+        allow read: if verified() && inMatch();
+        allow create: if verified() && inMatch()
+          && data().from == me()
+          && data().keys().hasOnly(['from', 'data'])
+          && str(data().data, 950000) && data().data[0:23] == 'data:image/jpeg;base64,';
+        allow delete: if verified() && inMatch() && resource.data.from == me();
+        allow update: if false;
       }
     }
   }

@@ -46,8 +46,8 @@ export default function Redraw({ partner, onSend }) {
         <FreeCanvas ref={canvas} color={color} brush={brush} locked={timer.done} />
       </div>
       {mode === 'base' && (
-        <div style={{ flex: 1, minHeight: 0, background: '#fff', borderRadius: 24, border: '3px dashed var(--roxo)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
-          <Avatar a={rd} width={desktop ? 340 : 200} onPaint={(part) => !timer.done && setRd({ ...rd, [part]: color })} />
+        <div style={{ flex: 1, minHeight: 160, paddingTop: 12, background: '#fff', borderRadius: 24, border: '3px dashed var(--roxo)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
+          <Avatar a={rd} fit onPaint={(part) => !timer.done && setRd({ ...rd, [part]: color })} />
         </div>
       )}
       </div>

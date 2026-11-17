@@ -7,7 +7,7 @@ export default function Profile({ me, profile, onRedraw, onLogout }) {
       <div className="cols">
         <div className="col-a">
           <h1 className="h1" style={{ fontSize: 30 }}>Meu perfil</h1>
-          <div className="portrait" style={{ height: 300 }}><Avatar a={me} width={250} /></div>
+          <div className="portrait" style={{ height: 'min(50vh, 340px)', paddingTop: 16 }}><Avatar a={me} fit /></div>
           <div className="row gap-8" style={{ alignItems: 'baseline', padding: '2px 4px' }}>
             <span style={{ fontSize: 30, fontWeight: 800 }}>{profile.name}</span>
             <span style={{ fontSize: 24, fontWeight: 500, color: 'var(--cinza)' }}>{profile.age}</span>

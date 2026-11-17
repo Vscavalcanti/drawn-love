@@ -45,7 +45,12 @@ export default function AvatarEditor({ value, onChange, color, setColor, locked 
           <div className="opt-grid">
             {style.options.map(([id, label]) => (
               <button key={id} aria-label={label} className={'opt' + (value[style.key] === id ? ' on' : '')} onClick={() => set(style.key, id)}>
-                <div className="opt-thumb"><div style={{ top: style.offset }}><Avatar a={{ ...value, [style.key]: id }} width={120} /></div></div>
+                <div className="opt-thumb">
+                  <div style={{ top: style.offset, width: style.size || 120, marginLeft: -(style.size || 120) / 2 }}>
+                    {/* na aba de cabelo o acessório some, para o corte aparecer */}
+                    <Avatar a={{ ...value, [style.key]: id, ...(style.key === 'hairStyle' ? { acc: 'nenhum' } : {}) }} width={style.size || 120} />
+                  </div>
+                </div>
                 <span>{label}</span>
               </button>
             ))}

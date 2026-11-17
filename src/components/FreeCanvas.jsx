@@ -2,7 +2,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 
 // Tela em branco para desenhar com traço livre (dedo ou mouse).
 // Pelo ref dá para chamar undo(), clear() e toDataURL().
-const FreeCanvas = forwardRef(function FreeCanvas({ color, brush, locked }, ref) {
+// onChange (opcional) é chamado quando um traço termina, ou ao desfazer/limpar.
+const FreeCanvas = forwardRef(function FreeCanvas({ color, brush, locked, onChange, hint = 'Desenhe aqui com traço livre, usando o dedo ou o mouse' }, ref) {
   const canvasRef = useRef(null);
   const strokes = useRef([]);
   const drawing = useRef(false);
@@ -28,8 +29,8 @@ const FreeCanvas = forwardRef(function FreeCanvas({ color, brush, locked }, ref)
   }, []);
 
   useImperativeHandle(ref, () => ({
-    undo: () => { strokes.current.pop(); redraw(); setEmpty(strokes.current.length === 0); },
-    clear: () => { strokes.current = []; redraw(); setEmpty(true); },
+    undo: () => { strokes.current.pop(); redraw(); setEmpty(strokes.current.length === 0); onChange?.(); },
+    clear: () => { strokes.current = []; redraw(); setEmpty(true); onChange?.(); },
     // Imagem pequena em JPEG para caber no banco de dados
     toDataURL: () => {
       const src = canvasRef.current, out = document.createElement('canvas');
@@ -59,7 +60,7 @@ const FreeCanvas = forwardRef(function FreeCanvas({ color, brush, locked }, ref)
     ctx.strokeStyle = st.color; ctx.lineWidth = st.w; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(...st.pts[n - 2]); ctx.lineTo(...st.pts[n - 1]); ctx.stroke();
   };
-  const up = () => { drawing.current = false; };
+  const up = () => { if (!drawing.current) return; drawing.current = false; onChange?.(); };
 
   return (
     <div style={{ flex: 1, minHeight: 0, position: 'relative', background: '#fff', borderRadius: 24, border: '3px dashed var(--roxo)', overflow: 'hidden' }}>
@@ -68,7 +69,7 @@ const FreeCanvas = forwardRef(function FreeCanvas({ color, brush, locked }, ref)
         style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none', cursor: 'crosshair' }} />
       {empty && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', color: 'var(--cinza-claro)', fontSize: 14, fontWeight: 600, textAlign: 'center', padding: 24 }}>
-          Desenhe aqui com traço livre, usando o dedo ou o mouse
+          {hint}
         </div>
       )}
     </div>

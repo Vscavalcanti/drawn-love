@@ -9,7 +9,7 @@ export const BASES = {
 
 // Base em branco usada no redesenho "Com a base"
 export const blankBase = (head) => ({
-  ...BASES[head], hair: '#FFFFFF', shirt: '#FFFFFF', accent: '#FFFFFF', hat: '#FFFFFF', skin: '#FFFFFF', acc: 'nenhum',
+  ...(BASES[head] || BASES.f), head: head || 'f', hair: '#FFFFFF', shirt: '#FFFFFF', accent: '#FFFFFF', hat: '#FFFFFF', skin: '#FFFFFF', acc: 'nenhum',
 });
 
 export const COLORS = [
@@ -28,11 +28,17 @@ export const SKINS = [
 
 // chave do personagem, deslocamento da miniatura (para mostrar a parte certa), opções
 export const STYLE_TABS = {
-  cabelo: { key: 'hairStyle', offset: -14, options: [['franja', 'Franja e rabo'], ['topete', 'Topete'], ['curto', 'Curto'], ['longo', 'Longo'], ['cacheado', 'Cacheado'], ['coque', 'Coque'], ['careca', 'Careca']] },
+  cabelo: { key: 'hairStyle', offset: -8, size: 96, options: [
+    ['franja', 'Franja e rabo'], ['longo', 'Longo'], ['cacheado', 'Cacheado'], ['cachos-longos', 'Cachos longos'],
+    ['afro', 'Black power'], ['crespo-curto', 'Crespo curto'], ['trancas', 'Tranças'], ['coque', 'Coque'],
+    ['topete', 'Topete'], ['lateral', 'Repartido'], ['curto', 'Curto'], ['raspado', 'Raspado'],
+    ['moicano', 'Moicano'], ['careca', 'Careca'],
+  ] },
+  rosto: { key: 'head', offset: -14, size: 70, options: [['f', 'Redondo'], ['m', 'Queixo forte'], ['oval', 'Oval'], ['quadrado', 'Quadrado'], ['coracao', 'Coração']] },
   olhos: { key: 'eyes', offset: -38, options: [['normal', 'Normal'], ['cilios', 'Cílios'], ['feliz', 'Feliz'], ['piscando', 'Piscando'], ['apaixonado', 'Apaixonado'], ['sono', 'Sonolento'], ['surpreso', 'Surpreso']] },
   boca: { key: 'mouth', offset: -52, options: [['aberto', 'Sorrisão'], ['lado', 'De lado'], ['lingua', 'Língua'], ['o', 'Surpresa'], ['neutra', 'Neutra'], ['gato', 'Gatinho'], ['dentes', 'Dentes']] },
   roupa: { key: 'outfit', offset: -86, options: [['avental', 'Avental'], ['jaqueta', 'Jaqueta'], ['camiseta', 'Camiseta'], ['moletom', 'Moletom']] },
   acessorio: { key: 'acc', offset: -14, options: [['nenhum', 'Nenhum'], ['boina', 'Boina'], ['bone', 'Boné'], ['gorro', 'Gorro'], ['laco', 'Laço'], ['oculos', 'Óculos'], ['flor', 'Flor']] },
 };
 
-export const EDITOR_TABS = [['cores', 'Cores'], ['pele', 'Pele'], ['cabelo', 'Cabelo'], ['olhos', 'Olhos'], ['boca', 'Boca'], ['roupa', 'Roupa'], ['acessorio', 'Acessório']];
+export const EDITOR_TABS = [['cores', 'Cores'], ['pele', 'Pele'], ['rosto', 'Rosto'], ['cabelo', 'Cabelo'], ['olhos', 'Olhos'], ['boca', 'Boca'], ['roupa', 'Roupa'], ['acessorio', 'Acessório']];

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Back } from '../components/Icons.jsx';
 import PasswordField from '../components/PasswordField.jsx';
 import { emailError } from '../utils/validate.js';
+import Logo from '../components/Logo.jsx';
 
 export default function Login({ go, onLogin, onReset }) {
   const [email, setEmail] = useState('');
@@ -26,7 +27,7 @@ export default function Login({ go, onLogin, onReset }) {
   return (
     <div className="screen narrow pad col gap-16">
       <button className="icon-btn" aria-label="Voltar" onClick={() => go('welcome')}><Back /></button>
-      <div className="logo" style={{ fontSize: 40, alignSelf: 'flex-start', margin: '8px 0 12px' }}>DRAWN LOVE</div>
+      <Logo size={72} align="start" className="login-logo" />
       <h1 className="h1" style={{ color: 'var(--tinta)', fontSize: 30 }}>Que bom te ver de novo</h1>
       <div className="col gap-6">
         <label className="label" htmlFor="lemail">E-mail</label>

@@ -18,6 +18,11 @@ const cfg = {
 };
 export const usingFirebase = Boolean(cfg.apiKey && cfg.projectId);
 
+// Confirmação de e-mail: DESLIGADA durante o teste.
+// Para ligar de novo: VITE_REQUIRE_EMAIL_VERIFICATION=true no .env e no Netlify,
+// e troque a função verified() no firestore.rules (instruções lá).
+export const requireEmailVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION === 'true';
+
 /* =============================== Firebase =============================== */
 
 let fbPromise = null;
@@ -70,7 +75,7 @@ const fbQuery = (fb, path, where) =>
 const fbList = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
 // Usuário logado no formato que o app usa
-const session = (u) => (u ? { uid: u.uid, email: u.email, verified: u.emailVerified } : null);
+const session = (u) => (u ? { uid: u.uid, email: u.email, verified: !requireEmailVerification || u.emailVerified } : null);
 
 const firebaseBackend = {
   auth: {
@@ -84,7 +89,7 @@ const firebaseBackend = {
       const fb = await firebase();
       fb.auth.languageCode = 'pt';
       const { user } = await fb.A.createUserWithEmailAndPassword(fb.auth, email, password);
-      await fb.A.sendEmailVerification(user);
+      if (requireEmailVerification) await fb.A.sendEmailVerification(user);
       return session(user);
     }),
     signIn: (email, password) => guard(async () => {
@@ -117,6 +122,7 @@ const firebaseBackend = {
     set: (path, value, merge = true) => guard(async () => { const fb = await firebase(); await withTimeout(fb.S.setDoc(fbRef(fb, path), value, { merge })); }),
     add: (path, value) => guard(async () => { const fb = await firebase(); return (await withTimeout(fb.S.addDoc(fbColl(fb, path), value))).id; }),
     query: (path, where) => guard(async () => { const fb = await firebase(); return fbList(await withTimeout(fb.S.getDocs(fbQuery(fb, path, where)))); }),
+    remove: (path) => guard(async () => { const fb = await firebase(); await withTimeout(fb.S.deleteDoc(fbRef(fb, path))); }),
     // Escuta mudanças em tempo real. Devolve uma função para parar de escutar.
     watch(path, where, cb, onError) {
       let off = () => {}, stopped = false;
@@ -212,6 +218,7 @@ const localBackend = {
     async set(path, value, merge = true) { const all = docs(); all[path] = merge ? deepMerge(all[path], value) : value; save('docs', all); },
     async add(path, value) { const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7); await this.set(path + '/' + id, value, false); return id; },
     query: async (path, where) => localList(path, where),
+    async remove(path) { const all = docs(); delete all[path]; save('docs', all); },
     watch: (path, where, cb) => poll(() => localList(path, where), cb),
     watchDoc: (path, cb) => poll(() => { const d = docs()[path]; return d ? { id: path.split('/').pop(), ...d } : null; }, cb),
   },
