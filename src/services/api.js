@@ -126,7 +126,18 @@ export async function sendMessage(matchId, uid, text, { system = false } = {}) {
   await data.set('matches/' + matchId, patch);
 }
 
-export const unlockDemo = (matchId) => data.set('matches/' + matchId, { demoUnlocked: true });
+// Só para teste/apresentação: finge que as duas pessoas conversaram nos últimos N dias (até hoje).
+// Os dias antes disso ficam marcados como "não contou", então a sequência dá exatamente N. N = 0 zera.
+export function simulateStreak(match, n) {
+  const key = (x) => x.toLocaleDateString('en-CA');
+  const mark = (v) => Object.fromEntries(match.users.map((u) => [u, v]));
+  const days = {};
+  const d = new Date();
+  for (let i = 0; i < n; i++) { days[key(d)] = mark(true); d.setDate(d.getDate() - 1); }
+  // dois dias "não contou": com N = 0, hoje e ontem ficam vazios e a sequência zera de verdade
+  days[key(d)] = mark(false); d.setDate(d.getDate() - 1); days[key(d)] = mark(false);
+  return data.set('matches/' + match.id, { days, demoUnlocked: false });
+}
 
 // Sequência: dias seguidos em que AS DUAS pessoas mandaram mensagem de verdade.
 // Conta para trás a partir de hoje (ou de ontem, se hoje ainda está em andamento).
