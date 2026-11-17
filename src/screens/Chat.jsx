@@ -4,6 +4,7 @@ import Mascot from '../components/Mascot.jsx';
 import { Back, Send, Lock } from '../components/Icons.jsx';
 import Gallery from '../components/Gallery.jsx';
 import GamesTab from '../games/GamesTab.jsx';
+import { PresenceDot, PresenceText } from '../components/Presence.jsx';
 import { watchMessages, sendMessage, simulateStreak, streakInfo, watchGames, MIN_CHARS } from '../services/api.js';
 
 const MOOD_STYLE = {
@@ -73,10 +74,16 @@ export default function Chat({ match, uid, myName, back }) {
     <div className="screen">
       <div className="row gap-12" style={{ padding: '16px 16px 10px' }}>
         <button className="icon-btn mobile-only" aria-label="Voltar" onClick={back}><Back /></button>
-        <div style={{ width: 44, height: 44, flex: 'none', borderRadius: 999, background: 'var(--rosa)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
-          {match.avs?.[other] && <Avatar a={match.avs[other]} width={44} />}
+        <div className="with-dot">
+          <div style={{ width: 44, height: 44, borderRadius: 999, background: 'var(--rosa)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
+            {match.avs?.[other] && <Avatar a={match.avs[other]} width={44} />}
+          </div>
+          <PresenceDot uid={other} />
         </div>
-        <div style={{ fontWeight: 800, fontSize: 20 }}>{name}</div>
+        <div className="col" style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 20, lineHeight: 1.2 }}>{name}</div>
+          <PresenceText uid={other} />
+        </div>
       </div>
 
       {/* Mascote da sequência: o lápis desenha o coração conforme os dias passam (escondido na aba Jogos, para sobrar espaço) */}

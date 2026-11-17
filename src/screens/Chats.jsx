@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Avatar from '../components/Avatar.jsx';
 import SentDrawing from '../components/SentDrawing.jsx';
 import { streakInfo } from '../services/api.js';
+import { PresenceDot } from '../components/Presence.jsx';
 
 // Lista de conversas + redesenhos recebidos esperando aprovação.
 export default function Chats({ uid, incoming, matches, activeId, onOpen, onAnswer }) {
@@ -40,7 +41,7 @@ export default function Chats({ uid, incoming, matches, activeId, onOpen, onAnsw
           return (
             <button key={m.id} onClick={() => onOpen(m.id)} className="row gap-12"
               style={{ padding: 12, borderRadius: 20, border: '2px solid ' + (activeId === m.id ? 'var(--magenta)' : 'rgba(115,90,150,0.25)'), background: '#fff', textAlign: 'left', color: 'var(--tinta)' }}>
-              <Thumb av={m.avs?.[other]} />
+              <div className="with-dot"><Thumb av={m.avs?.[other]} /><PresenceDot uid={other} size={16} /></div>
               <div className="col grow" style={{ minWidth: 0, gap: 2 }}>
                 <div style={{ fontWeight: 700, fontSize: 16 }}>{m.names?.[other]}</div>
                 <div style={{ fontSize: 13, color: 'var(--cinza)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

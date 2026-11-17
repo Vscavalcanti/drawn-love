@@ -57,6 +57,13 @@ export default function EditProfile({ ans, onSave, onCancel }) {
             <span style={{ fontSize: 14 }}>{draft.showOri !== false ? 'Mostrar no meu perfil' : 'Escondida do meu perfil'}</span>
           </button>
         </Field>
+        <Field label="Status online">
+          <button className={'toggle' + (draft.showOnline !== false ? ' on' : '')} aria-pressed={draft.showOnline !== false}
+            onClick={() => set('showOnline', draft.showOnline === false)}>
+            <span className="track"><span className="knob" /></span>
+            <span style={{ fontSize: 14 }}>{draft.showOnline !== false ? 'Mostrar quando estou online' : 'Ninguém vê quando estou online'}</span>
+          </button>
+        </Field>
         <Multi id="seek" label="Quero conhecer" hint="pode marcar mais de um" ans={draft} set={set} opts={OPTS.seek} />
         <Text id="school" label="Onde estuda ou estudou" hint="opcional" ph="Ex.: UNIT PE" ans={draft} set={set} />
       </Box>

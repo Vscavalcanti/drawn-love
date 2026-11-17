@@ -55,6 +55,35 @@ export async function saveProfile(uid, ans, head, done = false) {
 
 export const saveAvatar = (uid, me) => data.set('users/' + uid, { me, ready: true, updatedAt: Date.now() });
 
+// Quando a pessoa troca o nome ou redesenha o autorretrato, as conversas antigas também mudam.
+export const refreshInMatches = (uid, matches, patch) => Promise.all(matches.map((m) => {
+  const up = {};
+  if (patch.name !== undefined && m.names?.[uid] !== patch.name) up.names = { [uid]: patch.name };
+  if (patch.av !== undefined) up.avs = { [uid]: patch.av };
+  return Object.keys(up).length ? data.set('matches/' + m.id, up) : null;
+}));
+
+/* ------------------------------- Online ------------------------------- */
+// Enquanto o app está aberto e na tela, grava users/{uid}.lastSeen a cada minuto.
+// "Online" = gravou nos últimos 2,5 min. Quem desligar "Mostrar quando estou online" grava 0.
+export const PRESENCE_EVERY = 60 * 1000;
+const ONLINE_FOR = 150 * 1000;
+export const touchPresence = (uid, visible = true) => data.set('users/' + uid, { lastSeen: visible ? Date.now() : 0 });
+export const watchUser = (uid, cb) => data.watchDoc('users/' + uid, cb);
+
+export function presenceInfo(lastSeen, now = Date.now()) {
+  if (!lastSeen) return { online: false, text: '' };
+  const diff = now - lastSeen;
+  if (diff < ONLINE_FOR) return { online: true, text: 'Online' };
+  const min = Math.round(diff / 60000);
+  if (min < 60) return { online: false, text: `Visto há ${min} min` };
+  const h = Math.round(min / 60);
+  if (h < 24) return { online: false, text: `Visto há ${h} h` };
+  const d = new Date(lastSeen), y = new Date(now); y.setDate(y.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return { online: false, text: 'Visto ontem' };
+  return { online: false, text: 'Visto em ' + d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) };
+}
+
 export async function loadMe(uid) {
   const [pub, priv] = await Promise.all([data.get('users/' + uid), data.get('private/' + uid)]);
   return { pub, ans: priv?.ans || null, seen: priv?.seen || [] };

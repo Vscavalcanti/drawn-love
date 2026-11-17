@@ -17,7 +17,7 @@ import NavBar from './components/NavBar.jsx';
 import useIsDesktop from './components/useIsDesktop.js';
 import { BASES } from './data/avatarOptions.js';
 import {
-  auth, usingFirebase, preload, publicProfile, saveProfile, saveAvatar, loadMe, loadDiscover, markSeen,
+  auth, usingFirebase, preload, publicProfile, touchPresence, PRESENCE_EVERY, refreshInMatches, saveProfile, saveAvatar, loadMe, loadDiscover, markSeen,
   sendLike, watchIncoming, answerLike, watchMatches,
 } from './services/api.js';
 
@@ -73,6 +73,20 @@ export default function App() {
     return () => { off1(); off2(); };
   }, [uid]);
 
+  // Online: avisa que o app está aberto a cada minuto (só com a aba visível).
+  // Com "Mostrar quando estou online" desligado, grava 0 e ninguém vê.
+  const inApp = !!uid && !['loading', 'welcome', 'login', 'create', 'verify'].includes(screen);
+  const showOnline = ans.showOnline !== false;
+  useEffect(() => {
+    if (!inApp) return undefined;
+    if (!showOnline) { touchPresence(uid, false).catch(() => {}); return undefined; }
+    const beat = () => { if (document.visibilityState === 'visible') touchPresence(uid).catch(() => {}); };
+    beat();
+    const t = setInterval(beat, PRESENCE_EVERY);
+    document.addEventListener('visibilitychange', beat);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', beat); };
+  }, [inApp, uid, showOnline]);
+
   // Busca pessoas sempre que abre o Descubra
   const refreshPeople = useCallback(async () => {
     if (!uid) return;
@@ -110,17 +124,23 @@ export default function App() {
   // Editar perfil: grava o perfil novo e atualiza a tela (o filtro "Quero conhecer" muda na hora)
   const saveEdit = async (next) => {
     await saveProfile(uid, next, head);
+    await refreshInMatches(uid, matches, { name: publicProfile(next).name });
     setAns(next);
   };
   const login = async (mail, pass) => enter(await auth.signIn(normalizeEmail(mail), pass));
   const logout = async () => {
+    if (uid) await touchPresence(uid, false).catch(() => {});
     await auth.signOut();
     setUid(null); setEmail(''); setCreateStart(1); setAns({ showOri: true }); setMe(BASES.f); setHeadState('f'); setSeen([]);
     setPeople([]); setIncoming([]); setMatches([]); setActiveId(null);
     setScreen('welcome');
   };
   const saveDrawing = async () => {
-    try { await saveAvatar(uid, me); setScreen('discover'); } catch (e) { fail(e); }
+    try {
+      await saveAvatar(uid, me);
+      await refreshInMatches(uid, matches, { av: me });
+      setScreen('discover');
+    } catch (e) { fail(e); }
   };
   const pass = async () => {
     const next = [...seen, person.id];

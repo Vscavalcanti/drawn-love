@@ -26,11 +26,12 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if verified() || (signedIn() && me() == uid);
       allow create, update: if signedIn() && me() == uid
-        && data().keys().hasOnly(['profile', 'head', 'seek', 'me', 'ready', 'profileDone', 'updatedAt'])
+        && data().keys().hasOnly(['profile', 'head', 'seek', 'me', 'ready', 'profileDone', 'updatedAt', 'lastSeen'])
         && (!('profile' in data()) || (data().profile is map
             && str(data().profile.get('name', ''), 40)
             && str(data().profile.get('bio', ''), 2000)))
-        && (!('ready' in data()) || data().ready == false || verified());
+        && (!('ready' in data()) || data().ready == false || verified())
+        && (!('lastSeen' in data()) || data().lastSeen is int);
       allow delete: if false;
     }
 
