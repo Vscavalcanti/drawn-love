@@ -5,6 +5,7 @@ import { BASES } from '../data/avatarOptions.js';
 import { birthInfo } from '../utils/birth.js';
 import { emailError, passwordError, passwordRules } from '../utils/validate.js';
 import PasswordField, { PasswordChecklist } from '../components/PasswordField.jsx';
+import { OPTS } from '../data/profileOptions.js';
 
 // Cadastro em 5 etapas. "ans" guarda todas as respostas; "head" é a base escolhida (f = boina, m = boné).
 // A senha fica separada de "ans" para nunca ir para o banco de dados junto com o perfil.
@@ -53,14 +54,14 @@ export default function CreateProfile({ ans, setAns, password, setPassword, head
       body: (
         <>
           <Single id="gender" label="Gênero" ans={ans} set={set}
-            opts={['Mulher', 'Homem', 'Mulher trans', 'Homem trans', 'Não-binário', 'Gênero fluido', 'Agênero', 'Prefiro descrever', 'Prefiro não dizer']} />
+            opts={OPTS.gender} />
           {ans.gender === 'Prefiro descrever' && (
             <Text id="genderCustom" label="Como você descreve seu gênero?" ph="Escreva do seu jeito" ans={ans} set={set} />
           )}
           <Single id="pronouns" label="Pronomes" hint="opcional" ans={ans} set={set}
-            opts={['Ela/dela', 'Ele/dele', 'Elu/delu', 'Qualquer pronome', 'Prefiro não dizer']} />
+            opts={OPTS.pronouns} />
           <Single id="orient" label="Orientação sexual" hint="opcional" ans={ans} set={set}
-            opts={['Hétero', 'Gay', 'Lésbica', 'Bissexual', 'Pansexual', 'Assexual', 'Demissexual', 'Queer', 'Ainda descobrindo', 'Prefiro não dizer']} />
+            opts={OPTS.orient} />
           <Field label="Orientação no perfil">
             <button className={'toggle' + (ans.showOri !== false ? ' on' : '')} aria-pressed={ans.showOri !== false}
               onClick={() => set('showOri', ans.showOri === false)}>
@@ -69,7 +70,7 @@ export default function CreateProfile({ ans, setAns, password, setPassword, head
             </button>
           </Field>
           <Multi id="seek" label="Quero conhecer" hint="pode marcar mais de um" ans={ans} set={set}
-            opts={['Mulheres', 'Homens', 'Pessoas não-binárias', 'Todo mundo']} />
+            opts={OPTS.seek} />
         </>
       ),
       validate: () => {
@@ -83,7 +84,7 @@ export default function CreateProfile({ ans, setAns, password, setPassword, head
       body: (
         <>
           <Single id="looking" label="Tô procurando" ans={ans} set={set}
-            opts={['Relacionamento sério', 'Algo sério, mas vamos ver...', 'Algo casual', 'Amizade primeiro', 'Ainda não sei']} />
+            opts={OPTS.looking} />
           <Field label="Sobre mim" hint={'mínimo de ' + MIN_BIO + ' caracteres'} id="bio">
             <textarea id="bio" className="input" style={{ height: 150 }} maxLength={2000} value={ans.bio || ''} onChange={(e) => set('bio', e.target.value)}
               aria-describedby="bio-count"
@@ -92,7 +93,7 @@ export default function CreateProfile({ ans, setAns, password, setPassword, head
           </Field>
           <Text id="school" label="Onde estuda ou estudou" hint="opcional" ph="Ex.: UNIT PE" ans={ans} set={set} />
           <Single id="form" label="Formação" hint="opcional" ans={ans} set={set}
-            opts={['Ensino médio', 'Fazendo faculdade', 'Graduado(a)', 'Pós-graduação']} />
+            opts={OPTS.form} />
         </>
       ),
       validate: () => {
@@ -107,11 +108,11 @@ export default function CreateProfile({ ans, setAns, password, setPassword, head
       body: (
         <>
           <Single id="love" label="Linguagem do amor" hint="opcional" ans={ans} set={set}
-            opts={['Palavras de afirmação', 'Tempo de qualidade', 'Presentes', 'Atos de serviço', 'Toque físico']} />
-          <Single id="drink" label="Bebida" hint="opcional" ans={ans} set={set} opts={['Não bebo', 'Socialmente', 'Bebo com moderação']} />
-          <Single id="smoke" label="Você fuma?" hint="opcional" ans={ans} set={set} opts={['Não fumo', 'Às vezes', 'Fumo']} />
-          <Multi id="pets" label="Pets" hint="opcional" ans={ans} set={set} opts={['Cachorro', 'Gato', 'Outros', 'Nenhum']} />
-          <Single id="act" label="Atividade física" hint="opcional" ans={ans} set={set} opts={['Todo dia', 'Às vezes', 'Quase nunca']} />
+            opts={OPTS.love} />
+          <Single id="drink" label="Bebida" hint="opcional" ans={ans} set={set} opts={OPTS.drink} />
+          <Single id="smoke" label="Você fuma?" hint="opcional" ans={ans} set={set} opts={OPTS.smoke} />
+          <Multi id="pets" label="Pets" hint="opcional" ans={ans} set={set} opts={OPTS.pets} />
+          <Single id="act" label="Atividade física" hint="opcional" ans={ans} set={set} opts={OPTS.act} />
         </>
       ),
       validate: () => '',
@@ -121,7 +122,7 @@ export default function CreateProfile({ ans, setAns, password, setPassword, head
       body: (
         <>
           <Multi id="interests" label="Interesses" hint="até 5" max={5} ans={ans} set={set}
-            opts={['Música', 'Cinema', 'Leitura', 'Games', 'Praia', 'Trilhas', 'Cozinhar', 'Dança', 'Arte', 'Esportes', 'Fotografia', 'Viagens', 'Animes', 'Piquenique', 'Café', 'Séries']} />
+            opts={OPTS.interests} />
           <Text id="song" label="Minha música" hint="opcional" ph="Música e artista" ans={ans} set={set} />
           <Field label="Personagem base" hint="qualquer pessoa pode escolher qualquer base">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -191,7 +192,7 @@ export default function CreateProfile({ ans, setAns, password, setPassword, head
 export const MIN_BIO = 200;
 
 // Contador da autodescrição: mostra quanto falta até o mínimo
-function BioCounter({ text }) {
+export function BioCounter({ text }) {
   const n = (text || '').trim().length;
   const ok = n >= MIN_BIO;
   return (
@@ -206,7 +207,7 @@ function BioCounter({ text }) {
   );
 }
 
-function Field({ label, hint, id, children }) {
+export function Field({ label, hint, id, children }) {
   return (
     <div className="col gap-8">
       <label className="label" htmlFor={id}>{label}{hint && <span> · {hint}</span>}</label>
@@ -215,7 +216,7 @@ function Field({ label, hint, id, children }) {
   );
 }
 
-function Text({ id, label, hint, type = 'text', ph, ans, set, max = 100 }) {
+export function Text({ id, label, hint, type = 'text', ph, ans, set, max = 100 }) {
   return (
     <Field label={label} hint={hint} id={id}>
       <input id={id} className="input" type={type} maxLength={type === 'date' ? undefined : max} value={ans[id] || ''} placeholder={ph} onChange={(e) => set(id, e.target.value)} />
@@ -223,7 +224,7 @@ function Text({ id, label, hint, type = 'text', ph, ans, set, max = 100 }) {
   );
 }
 
-function Single({ id, label, hint, opts, ans, set }) {
+export function Single({ id, label, hint, opts, ans, set }) {
   return (
     <Field label={label} hint={hint}>
       <div className="row wrap gap-8">
@@ -236,7 +237,7 @@ function Single({ id, label, hint, opts, ans, set }) {
   );
 }
 
-function Multi({ id, label, hint, opts, max, ans, set }) {
+export function Multi({ id, label, hint, opts, max, ans, set }) {
   const arr = ans[id] || [];
   return (
     <Field label={label} hint={hint}>

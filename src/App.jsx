@@ -107,6 +107,11 @@ export default function App() {
     await saveProfile(uid, ans, head, true);
     setScreen('draw');
   };
+  // Editar perfil: grava o perfil novo e atualiza a tela (o filtro "Quero conhecer" muda na hora)
+  const saveEdit = async (next) => {
+    await saveProfile(uid, next, head);
+    setAns(next);
+  };
   const login = async (mail, pass) => enter(await auth.signIn(normalizeEmail(mail), pass));
   const logout = async () => {
     await auth.signOut();
@@ -190,7 +195,7 @@ export default function App() {
         );
       } else content = screen === 'chat' && chatView ? chatView : chatsList;
       break;
-    case 'profile': content = <Profile me={me} profile={myProfile} onRedraw={() => setScreen('draw')} onLogout={logout} />; break;
+    case 'profile': content = <Profile me={me} profile={myProfile} ans={ans} onSave={saveEdit} onRedraw={() => setScreen('draw')} onLogout={logout} />; break;
     default: content = null;
   }
 
