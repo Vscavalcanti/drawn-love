@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 
 // Cronômetro regressivo em segundos. Reinicia quando "key" muda.
-export default function useCountdown(seconds, key) {
+// Só começa a contar quando "running" for true (depois do aviso de "Começar").
+export default function useCountdown(seconds, key, running = true) {
   const [time, setTime] = useState(seconds);
+  useEffect(() => { setTime(seconds); }, [seconds, key]);
   useEffect(() => {
-    setTime(seconds);
+    if (!running) return undefined;
     const id = setInterval(() => setTime((t) => (t > 0 ? t - 1 : 0)), 1000);
     return () => clearInterval(id);
-  }, [seconds, key]);
+  }, [running, seconds, key]);
   const label = Math.floor(time / 60) + ':' + String(time % 60).padStart(2, '0');
-  return { time, label, done: time === 0, low: time <= 10 };
+  return { time, label, done: running && time === 0, low: running && time <= 10 };
 }
