@@ -217,6 +217,28 @@ export async function deletePhoto(matchId, photoId) {
   await data.remove('matches/' + matchId + '/photoData/' + photoId);
 }
 
+/* ---------------------- Desenhos de mim (perfil) ---------------------- */
+//   portraits/{uid}/items/{likeId}   by, byName, sent (o redesenho), at, hidden
+// Cada redesenho que alguém fez de mim e que eu aprovei (virou match) entra aqui.
+// Só eu e quem tem match comigo conseguimos ver (regras do Firebase).
+
+export const watchPortraits = (owner, cb, onError) =>
+  data.watch('portraits/' + owner + '/items', null, (list) => cb(list.sort((a, b) => b.at - a.at)), onError);
+
+// Copia para a galeria os redesenhos aprovados que ainda não estão lá (roda ao entrar e a cada match novo).
+export async function syncPortraits(uid) {
+  const [likes, have] = await Promise.all([
+    data.query('likes', ['to', '==', uid]),
+    data.query('portraits/' + uid + '/items'),
+  ]);
+  const got = new Set(have.map((h) => h.id));
+  const todo = likes.filter((l) => l.status === 'accepted' && l.sent && !got.has(l.id));
+  await Promise.all(todo.map((l) => data.set('portraits/' + uid + '/items/' + l.id,
+    { by: l.from, byName: l.fromName || '', sent: l.sent, at: l.at || Date.now(), hidden: false }, false)));
+}
+
+export const setPortraitHidden = (uid, id, hidden) => data.set('portraits/' + uid + '/items/' + id, { hidden });
+
 /* -------------------------------- Jogos -------------------------------- */
 //   matches/{id}/games/{jogo}   type, createdBy, status ('playing' | 'won' | 'lost' | 'draw' | 'ended'),
 //                               turn (de quem é a vez), state (dados do jogo), at, updatedAt

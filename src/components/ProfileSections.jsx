@@ -2,7 +2,7 @@ import { Music } from './Icons.jsx';
 
 // Monta as seções do perfil (estilo "Tô procurando", "Sobre mim"...).
 // Um campo com valor null não aparece (ex.: orientação escondida).
-export default function ProfileSections({ p, empty = '' }) {
+export default function ProfileSections({ p, empty = '', afterBio = null }) {
   const rows = (list) => list.filter(([, v]) => v !== null);
   const val = (v) => v || empty;
 
@@ -10,6 +10,7 @@ export default function ProfileSections({ p, empty = '' }) {
     <>
       <Section title="Tô procurando"><div style={{ fontSize: 18, fontWeight: 700 }}>{val(p.looking)}</div></Section>
       <Section title="Sobre mim"><p style={{ margin: 0, fontSize: 15, lineHeight: 1.5 }}>{val(p.bio)}</p></Section>
+      {afterBio}
       <Rows title="Informações básicas" empty={empty}
         items={rows([['Gênero', p.gender], ['Pronomes', p.pronouns], ['Orientação', p.orient], ['Distância', p.dist], ['Estuda em', p.school]])} />
       <Rows title="Mais sobre mim" empty={empty}

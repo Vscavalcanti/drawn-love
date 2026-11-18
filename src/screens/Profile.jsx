@@ -2,8 +2,9 @@ import { useRef, useState } from 'react';
 import Avatar from '../components/Avatar.jsx';
 import ProfileSections from '../components/ProfileSections.jsx';
 import EditProfile from '../components/EditProfile.jsx';
+import PortraitGallery from '../components/PortraitGallery.jsx';
 
-export default function Profile({ me, profile, ans, onSave, onRedraw, onLogout }) {
+export default function Profile({ uid, me, profile, ans, onSave, onRedraw, onLogout }) {
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
   const topRef = useRef(null);
@@ -34,7 +35,7 @@ export default function Profile({ me, profile, ans, onSave, onRedraw, onLogout }
             <EditProfile ans={ans} onSave={save} onCancel={() => { setEditing(false); toTop(); }} />
           ) : (
             <>
-              <ProfileSections p={profile} empty="Não preenchido" />
+              <ProfileSections p={profile} empty="Não preenchido" afterBio={uid && <PortraitGallery owner={uid} editable />} />
               <button className="btn btn-secondary mobile-only" style={{ borderColor: 'var(--magenta)', color: 'var(--magenta)' }} onClick={onRedraw}>Redesenhar meu autorretrato</button>
               <button className="btn btn-secondary" onClick={onLogout}>Sair da conta</button>
             </>

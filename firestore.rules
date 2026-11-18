@@ -60,6 +60,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------- Desenhos de mim (galeria do perfil) ----------
+    // Cada item é um redesenho que alguém fez de mim e que eu aprovei.
+    // Eu vejo os meus; outra pessoa só vê se tiver match comigo.
+    match /portraits/{owner}/items/{likeId} {
+      function pairId() { return owner < me() ? owner + '_' + me() : me() + '_' + owner; }
+      function like() { return get(/databases/$(database)/documents/likes/$(likeId)).data; }
+      allow read: if verified() && (me() == owner
+        || exists(/databases/$(database)/documents/matches/$(pairId())));
+      // só copia um redesenho de verdade: o like é para mim, foi aceito e o desenho é o mesmo
+      allow create: if verified() && me() == owner
+        && data().keys().hasOnly(['by', 'byName', 'sent', 'at', 'hidden'])
+        && like().to == me() && like().status == 'accepted'
+        && data().by == like().from && data().sent == like().sent
+        && str(data().byName, 40) && data().hidden is bool;
+      allow update: if verified() && me() == owner
+        && data().diff(resource.data).affectedKeys().hasOnly(['hidden']) && data().hidden is bool;
+      allow delete: if false;
+    }
+
     // ---------- Conversas ----------
     match /matches/{id} {
       function members() { return resource.data.users; }

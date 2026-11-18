@@ -17,7 +17,7 @@ import NavBar from './components/NavBar.jsx';
 import useIsDesktop from './components/useIsDesktop.js';
 import { BASES } from './data/avatarOptions.js';
 import {
-  auth, usingFirebase, preload, publicProfile, touchPresence, PRESENCE_EVERY, refreshInMatches, saveProfile, saveAvatar, loadMe, loadDiscover, markSeen,
+  auth, usingFirebase, preload, publicProfile, touchPresence, PRESENCE_EVERY, refreshInMatches, syncPortraits, saveProfile, saveAvatar, loadMe, loadDiscover, markSeen,
   sendLike, watchIncoming, answerLike, watchMatches,
 } from './services/api.js';
 
@@ -86,6 +86,11 @@ export default function App() {
     document.addEventListener('visibilitychange', beat);
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', beat); };
   }, [inApp, uid, showOnline]);
+
+  // Desenhos de mim: copia para o perfil os redesenhos aprovados (ao entrar e a cada match novo)
+  useEffect(() => {
+    if (uid && inApp) syncPortraits(uid).catch(() => {});
+  }, [uid, inApp, matches.length]);
 
   // Busca pessoas sempre que abre o Descubra
   const refreshPeople = useCallback(async () => {
@@ -215,7 +220,7 @@ export default function App() {
         );
       } else content = screen === 'chat' && chatView ? chatView : chatsList;
       break;
-    case 'profile': content = <Profile me={me} profile={myProfile} ans={ans} onSave={saveEdit} onRedraw={() => setScreen('draw')} onLogout={logout} />; break;
+    case 'profile': content = <Profile uid={uid} me={me} profile={myProfile} ans={ans} onSave={saveEdit} onRedraw={() => setScreen('draw')} onLogout={logout} />; break;
     default: content = null;
   }
 

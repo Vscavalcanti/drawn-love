@@ -4,6 +4,7 @@ import Mascot from '../components/Mascot.jsx';
 import { Back, Send, Lock } from '../components/Icons.jsx';
 import Gallery from '../components/Gallery.jsx';
 import GamesTab from '../games/GamesTab.jsx';
+import PartnerProfile from '../components/PartnerProfile.jsx';
 import { PresenceDot, PresenceText } from '../components/Presence.jsx';
 import { watchMessages, sendMessage, simulateStreak, streakInfo, watchGames, MIN_CHARS } from '../services/api.js';
 
@@ -21,6 +22,7 @@ export default function Chat({ match, uid, myName, back }) {
   const [msgs, setMsgs] = useState([]);
   const [games, setGames] = useState(null);
   const [tab, setTab] = useState('conversa');
+  const [showProfile, setShowProfile] = useState(false);
   const [draft, setDraft] = useState('');
   const [short, setShort] = useState(false);
   const [error, setError] = useState('');
@@ -71,20 +73,24 @@ export default function Chat({ match, uid, myName, back }) {
   };
 
   return (
-    <div className="screen">
+    <div className="screen" style={{ position: 'relative' }}>
       <div className="row gap-12" style={{ padding: '16px 16px 10px' }}>
         <button className="icon-btn mobile-only" aria-label="Voltar" onClick={back}><Back /></button>
-        <div className="with-dot">
-          <div style={{ width: 44, height: 44, borderRadius: 999, background: 'var(--rosa)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
-            {match.avs?.[other] && <Avatar a={match.avs[other]} width={44} />}
+        <button className="chat-who" onClick={() => setShowProfile(true)} aria-label={'Ver perfil de ' + name}>
+          <div className="with-dot">
+            <div style={{ width: 44, height: 44, borderRadius: 999, background: 'var(--rosa)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
+              {match.avs?.[other] && <Avatar a={match.avs[other]} width={44} />}
+            </div>
+            <PresenceDot uid={other} />
           </div>
-          <PresenceDot uid={other} />
-        </div>
-        <div className="col" style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 20, lineHeight: 1.2 }}>{name}</div>
-          <PresenceText uid={other} />
-        </div>
+          <div className="col" style={{ minWidth: 0, textAlign: 'left' }}>
+            <div style={{ fontWeight: 800, fontSize: 20, lineHeight: 1.2 }}>{name}</div>
+            <PresenceText uid={other} />
+          </div>
+          <span className="chat-who-hint">Ver perfil</span>
+        </button>
       </div>
+      {showProfile && <PartnerProfile uid={other} name={name} myName={myName} onClose={() => setShowProfile(false)} />}
 
       {/* Mascote da sequência: o lápis desenha o coração conforme os dias passam (escondido na aba Jogos, para sobrar espaço) */}
       {tab !== 'jogos' && <div className="card row gap-12" style={{ margin: '0 16px', padding: '10px 14px', background: mood.bg }}>
